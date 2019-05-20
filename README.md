@@ -37,7 +37,7 @@ dim(validation)
 ```{r}
 nzv <- nearZeroVar(training, saveMetrics=TRUE)
 sum(nzv$nzv)
-training1 <- subset(training, select= -c(nzv$nzv==FALSE))
+training1 <- subset(training, select= c(nzv$nzv==FALSE))
 dim(training1)
 ```
 2. Preprocess with PCA
