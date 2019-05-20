@@ -4,9 +4,62 @@ You can use the [editor on GitHub](https://github.com/ruc140/HAR-project/edit/ma
 
 Whenever you commit to this repository, GitHub Pages will run [Jekyll](https://jekyllrb.com/) to rebuild the pages in your site, from the content in your Markdown files.
 
-### Markdown
+## Human Activities Recognition Project
 
-Markdown is a lightweight and easy-to-use syntax for styling your writing. It includes conventions for
+This project is to construct a model based on Human Activities Recognition data, which can predict the correctness of movement (5 classes) based on a list of variables. The dataset contains about 20000 observations on 160 variables. I first removed the variables that are not movement measurements and those contain NA data. I then divide the data into 70% training and 30% validation. A random forest model is fitted based on training data and accuracy is measured based on validation.
+
+### Getting and cleaning data
+```{r}
+data <- read.csv("Project/pml-training.csv")
+# str(data)
+# remove names and times that can't be used to construct model
+HAR <- subset(data, select= -c(1:7))
+dim(HAR)
+# remove columns containing NA
+max <- apply(HAR, 2, max)
+nanumber <- which(is.na(max)==TRUE)
+nanumber <- data.frame(nanumber)
+HAR_noNA <- subset(HAR, select= -nanumber[,1])
+dim(HAR_noNA)
+```
+### Diving training and validation datasets
+```{r}
+library(caret)
+set.seed(12345)
+inTrain <- createDataPartition(y=HAR_noNA$classe, p=0.7, list=FALSE)
+training <- HAR_noNA[inTrain,]
+validation <- HAR_noNA[-inTrain,]
+dim(training)
+dim(validation)
+```
+### Preprocess data
+1. remove near zero variable
+```{r}
+nzv <- nearZeroVar(training, saveMetrics=TRUE)
+sum(nzv$nzv)
+training1 <- subset(training, select= -c(nzv$nzv==FALSE))
+dim(training1)
+```
+2. Preprocess with PCA
+```{r}
+preProc1 <- preProcess(training1[,-53], method="pca", thresh = 0.95)
+trainPC1 <- predict(preProc1, training[,-53])
+```
+
+### Set up parallel computing and fit model
+```{r}
+library(parallel)
+library(doParallel)
+cluster <- makeCluster(detectCores() - 1) # convention to leave 1 core for OS
+registerDoParallel(cluster)
+fitControl <- trainControl(method = "cv",
+                           number = 5,
+                           allowParallel = TRUE)                           
+modfit_rf <- train(classe ~., method="rf",data=trainPC1,trControl = fitControl)
+stopCluster(cluster)
+registerDoSEQ()
+```
+### In and out sample error
 
 ```markdown
 Syntax highlighted code block
@@ -28,10 +81,3 @@ Syntax highlighted code block
 
 For more details see [GitHub Flavored Markdown](https://guides.github.com/features/mastering-markdown/).
 
-### Jekyll Themes
-
-Your Pages site will use the layout and styles from the Jekyll theme you have selected in your [repository settings](https://github.com/ruc140/HAR-project/settings). The name of this theme is saved in the Jekyll `_config.yml` configuration file.
-
-### Support or Contact
-
-Having trouble with Pages? Check out our [documentation](https://help.github.com/categories/github-pages-basics/) or [contact support](https://github.com/contact) and we’ll help you sort it out.
