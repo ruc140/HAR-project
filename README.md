@@ -58,6 +58,7 @@ fitControl <- trainControl(method = "cv",
 modfit_rf <- train(classe ~., method="rf",data=training1, preProcess="pca", trControl = fitControl)
 stopCluster(cluster)
 registerDoSEQ()
+modfit_rf$finalModel
 ```
 ### In and out sample error
 
