@@ -55,7 +55,7 @@ registerDoParallel(cluster)
 fitControl <- trainControl(method = "cv",
                            number = 5,
                            allowParallel = TRUE)                           
-modfit_rf <- train(classe ~., method="rf",data=trainPC1,trControl = fitControl)
+modfit_rf <- train(classe ~., method="rf",data=training1, preProcess="pca", trControl = fitControl)
 stopCluster(cluster)
 registerDoSEQ()
 ```
