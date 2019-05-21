@@ -42,8 +42,14 @@ dim(training1)
 ```
 2. Preprocess with PCA
 ```{r}
-preProc1 <- preProcess(training1[,-53], method="pca", thresh = 0.95)
-trainPC1 <- predict(preProc1, training[,-53])
+preProc1 <-preProcess(training1[,-53], method = c("center", "scale"))
+trainPC1 <-predict(preProc1, training1[,-53])
+preProc2 <- preProcess(trainPC1, method="pca", thresh = 0.8)
+trainPC2 <- predict(preProc2, trainPC1)
+preProc3 <- preProcess(trainPC1, method="pca", thresh = 0.85)
+trainPC3 <- predict(preProc3, trainPC1)
+preProc4 <- preProcess(trainPC1, method="pca", thresh = 0.9)
+trainPC4 <- predict(preProc4, trainPC1)
 ```
 
 ### Set up parallel computing and fit model
@@ -55,12 +61,16 @@ registerDoParallel(cluster)
 fitControl <- trainControl(method = "cv",
                            number = 5,
                            allowParallel = TRUE)                           
-modfit_rf <- train(classe ~., method="rf",data=training1, preProcess="pca", trControl = fitControl)
+modfit_rf2 <- train(training1$classe ~., method="rf",data=trainPC2, trControl = fitControl)
+modfit_rf3 <- train(training1$classe ~., method="rf",data=trainPC3, trControl = fitControl)
+modfit_rf4 <- train(training1$classe ~., method="rf",data=trainPC4, trControl = fitControl)
 stopCluster(cluster)
 registerDoSEQ()
 modfit_rf$finalModel
 ```
 ### In and out sample error
+pred_validation <- predict(modfit_rf, data=validation)
+accuracy <- sum(pred_validation == validation$classe) / length(pred_validation)
 
 ```markdown
 Syntax highlighted code block
