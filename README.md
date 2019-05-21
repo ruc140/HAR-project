@@ -36,6 +36,10 @@ dim(training1)
 ```
 
 ### Set up parallel computing and fit model
+Parallel computing is used to speed up the processing time.
+Cross validation is done with k=5. This is to balance the bias and variance.
+Data is preprocessed with PCA to condense the variables and prevent overfitting. A threshold 0.8 leads to 12 variables.
+
 ```{r}
 library(parallel)
 library(doParallel)
@@ -56,5 +60,13 @@ pred_validation <- predict(modfit_rf, newdata=validation)
 accuracy <- sum(pred_validation == validation$classe) / length(pred_validation)
 error <- 1- accuracy
 ```
-The out of sample error is `r error`.
+The expected out of sample error is `r error`.
+
+### Prediction for testing data
+```{r}
+testing <- read.csv("Project/pml-testing.csv")
+pred_testing <- predict(modfit_rf, newdata=testing)
+print(pred_testing)
+```
+
 
