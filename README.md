@@ -33,23 +33,12 @@ dim(training)
 dim(validation)
 ```
 ### Preprocess data
-1. remove near zero variable
+remove near zero variable
 ```{r}
 nzv <- nearZeroVar(training, saveMetrics=TRUE)
 sum(nzv$nzv)
 training1 <- subset(training, select= c(nzv$nzv==FALSE))
 dim(training1)
-```
-2. Preprocess with PCA
-```{r}
-preProc1 <-preProcess(training1[,-53], method = c("center", "scale"))
-trainPC1 <-predict(preProc1, training1[,-53])
-preProc2 <- preProcess(trainPC1, method="pca", thresh = 0.8)
-trainPC2 <- predict(preProc2, trainPC1)
-preProc3 <- preProcess(trainPC1, method="pca", thresh = 0.85)
-trainPC3 <- predict(preProc3, trainPC1)
-preProc4 <- preProcess(trainPC1, method="pca", thresh = 0.9)
-trainPC4 <- predict(preProc4, trainPC1)
 ```
 
 ### Set up parallel computing and fit model
@@ -60,35 +49,18 @@ cluster <- makeCluster(detectCores() - 1) # convention to leave 1 core for OS
 registerDoParallel(cluster)
 fitControl <- trainControl(method = "cv",
                            number = 5,
+                           preProcOptions = list(thresh = 0.8),
                            allowParallel = TRUE)                           
-modfit_rf2 <- train(training1$classe ~., method="rf",data=trainPC2, trControl = fitControl)
-modfit_rf3 <- train(training1$classe ~., method="rf",data=trainPC3, trControl = fitControl)
-modfit_rf4 <- train(training1$classe ~., method="rf",data=trainPC4, trControl = fitControl)
+modfit_rf <- train(classe ~., method="rf",data=training1, preProcess = c("center", "scale", "pca"), trControl = fitControl)
 stopCluster(cluster)
 registerDoSEQ()
 modfit_rf$finalModel
 ```
-### In and out sample error
-pred_validation <- predict(modfit_rf, data=validation)
+### Out sample error
+```{r}
+pred_validation <- predict(modfit_rf, newdata=validation)
 accuracy <- sum(pred_validation == validation$classe) / length(pred_validation)
-
-```markdown
-Syntax highlighted code block
-
-# Header 1
-## Header 2
-### Header 3
-
-- Bulleted
-- List
-
-1. Numbered
-2. List
-
-**Bold** and _Italic_ and `Code` text
-
-[Link](url) and ![Image](src)
+error <- 1- accuracy
 ```
-
-For more details see [GitHub Flavored Markdown](https://guides.github.com/features/mastering-markdown/).
+The out of sample error is `r error`.
 
